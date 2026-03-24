@@ -2,7 +2,8 @@
 
 NO_EMAIL=false
 FILE=""
-
+LIST=false
+#Must not start the change to a certain boolean value so that it can be compared or true
 while [[ $# -gt 0 ]]; do
   case $1 in
     -l|--list )

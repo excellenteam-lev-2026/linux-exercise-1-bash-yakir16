@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 
 
-cd "$(git root)" || { echo "Can't cd to top level directory";exit 1; }
-
+cd "$(bin/git-root)" || { echo "Can't cd to top level directory";exit 1; }
+#$(bin/git-root) Not spelled correctly or not recognized
 PROJECT_FULL_PATH=
 SUMMARY_BY_LINE=
 DEDUP_BY_EMAIL=
 MERGES_ARG=
 OUTPUT_STYLE=
 for arg in "$@"; do
-    case "x$arg" in
+
+    case "$arg" in
+	#x The added x interfered with comparing which flags were written
         --full-path)
             PROJECT_FULL_PATH=1
             ;;

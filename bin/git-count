@@ -2,7 +2,13 @@
 
 if test "$1" = "--all"; then
   git shortlog -n -s | awk '{print substr($0,index($0,$2)) " (" $1 ")"}'
+  # git shortlog -n -s Returns a summary of all commits of the current branch we are on and the -n flag sorts in numerical order by each author of the commits and the -s flag subtracts the commit description from the summary
   echo
 fi
 
-echo total "$(git rev-list --count HEAD^)"
+#this is line of the bug echo total "$(git rev-list --count HEAD^)" 
+#Because it does not include the last commit in the count 
+#but starts from the commit before it by using ^ which moves back one from where the HEAD is. 
+echo total "$(git rev-list --count HEAD)"
+#git rev-list Lists commit objects in reverse chronological order and the flag --count Causes only the number of all commits to be returned and no more details
+
