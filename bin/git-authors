@@ -52,3 +52,4 @@ if $LIST; then
 else
   authors >> "$FILE"
 fi
+
