@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
 
 if test "$1" = "--all"; then
+#test checks is the first parameter passed equal to the string --all
   git shortlog -n -s | awk '{print substr($0,index($0,$2)) " (" $1 ")"}'
-  # git shortlog -n -s Returns a summary of all commits of the current branch we are on and the -n flag sorts in numerical order by each author of the commits and the -s flag subtracts the commit description from the summary
+  #git shortlog -n -s Returns a summary of all commits of the current branch we are on and the -n flag sorts in numerical order by each author of the commits and the -s flag subtracts the commit description from the summary
+  #awk awk is a powerful text-processing that take the result of  git shortlog -n -s and processing it and return the number of commits for each user and next to it the user's name
+  #index returns the position of the second field in the entire passed row
+  #substr returns a substring from the received string in our case it returns the second field
   echo
 fi
 
 #this is line of the bug echo total "$(git rev-list --count HEAD^)" 
 #Because it does not include the last commit in the count 
-#but starts from the commit before it by using ^ which moves back one from where the HEAD is. 
+#but starts from the commit before it by using ^ which moves back one from where the HEAD is
 echo total "$(git rev-list --count HEAD)"
+#echo is used to print to the screen
 #git rev-list Lists commit objects in reverse chronological order and the flag --count Causes only the number of all commits to be returned and no more details
 

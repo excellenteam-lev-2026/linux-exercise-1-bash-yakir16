@@ -2,16 +2,18 @@
 
 
 cd "$(bin/git-root)" || { echo "Can't cd to top level directory";exit 1; }
-#$(bin/git-root) Not spelled correctly or not recognized
+#$(BIN/GIT-ROOT) NOT RECOGNIZED SO I FIX IT
 PROJECT_FULL_PATH=
 SUMMARY_BY_LINE=
 DEDUP_BY_EMAIL=
 MERGES_ARG=
 OUTPUT_STYLE=
 for arg in "$@"; do
-
+#The for loop iterates over all the variables that a user passed on the command line
+#"$@ means the list of parameters passed by the user
     case "$arg" in
-	#x The added x interfered with comparing which flags were written
+	#The case checks which arguments the user passed on the command line and accordingly performs actions for each argument name
+	#THE BUG IS THE ADDED X INTERFERED WITH COMPARING WHICH FLAGS WERE WRITTEN
         --full-path)
             PROJECT_FULL_PATH=1
             ;;
@@ -27,20 +29,27 @@ for arg in "$@"; do
         --output-style)
             OUTPUT_STYLE="$2"
             shift
+			#Moves the passed parameter list one step to the right, meaning the first variable is overwritten by the second variable
+			#the third variable overwrites the second variable's place, and so on.
             ;;
         -*)
             >&2 echo "unknown argument $arg found"
+			#echo is used to print to the screen and > redirect the file descriptor stdout to stderr
             exit 1
             ;;
         *)
             set -- "$@" "$arg"
+			#Take all existing arguments, and add $arg at the end
             ;;
     esac
 
     shift
+	#Moves the passed parameter list one step to the right, meaning the first variable is overwritten by the second variable
+	#the third variable overwrites the second variable's place, and so on.
 done
 
 if [ -n "$DEDUP_BY_EMAIL" ] && [ -n "$SUMMARY_BY_LINE" ]; then
+#-n means if the value of the variable non-zero
     >&2 echo "--dedup-by-email used with --line is not supported"
     exit 1
 fi
@@ -55,10 +64,13 @@ if [ -n "$SUMMARY_BY_LINE" ]; then
   paths=( "$@" )
 else
   [ $# -ne 0 ] && commit=$*
+  #If the parameter list remaining after all shift is greater than or equal to 0
+  #$* List of all parameters passed and remaining after the shift
 fi
 
 if [[ -n "$PROJECT_FULL_PATH" ]]; then
   project=${PWD/${HOME}/\~}
+  #$PWD is an environment variable that displays the current location the user is in the file system
 else
   project=${PWD##*/}
 fi
@@ -135,6 +147,7 @@ dedup_by_email() {
             printf "%6d\t%s\n", emails[email], name
         }
     }' | sort -rn -k 1
+	#sorts lines of text by the first column, numerically and in descending order
 }
 
 #
@@ -182,6 +195,8 @@ single_file() {
 
 current_branch_name() {
   git rev-parse --abbrev-ref HEAD
+  #Returns the name of the current branch you are in
+  
 }
 
 #
@@ -200,6 +215,8 @@ line_count() {
 
 uncommitted_changes_count() {
   git status --porcelain | wc -l
+  #Show the working tree status and the flag ----porcelain is for short format
+  #wc -l count how many lines have been moved from the output of the previous command
 }
 
 
@@ -218,6 +235,10 @@ print_summary_by_line() {
     echo " lines       : $(line_count "${paths[@]}")"
     echo " authors     :"
     lines "${paths[@]}" | sort | uniq -c | sort -rn | format_authors
+	#${paths[@]} is for expands the array so that each element remains a separate argument
+	#sort sorts all rows alphabetically
+	#uniq -c Combines identical lines the flag -c counts how many times each line appeared
+	#in sort the flag -r is for descending order and the -n is for order by number
   fi
 }
 
