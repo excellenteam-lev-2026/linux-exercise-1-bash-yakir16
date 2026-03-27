@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+commit_days=${GIT_RECENT_COMMITTERS_DAYS:-10}
+#man/GIT_RECENT_COMMITTERS_DAYS.md is the man document of the environment variable
+ git log > /dev/null 2>&1
+  errorN=$?
+  if test $errorN != 0; then
+    >&2 echo "you are not in git repository" 
+    exit $errorN
+  fi
+  declare -A numsC=()
+   
+if [ "${#}" -gt 2 -o "${#}" -eq 1 ]; then
+    echo "wrong parameters"
+    exit 1;
+fi
+parmterD=
+if [ "${#}" -eq 0 ];then
+parmterD="$commit_days"
+else
+if [ "${#}" -eq 2 ]; then
+   
+    if [ "$2" -lt 0 ]; then
+    echo "negative number"
+    exit 1;
+	fi
+	parmterD="$2"
+fi
+fi
+((parmterD*=-1))
+lineF=
+touch /$PWD/fileH.txt
+git log --since $(date +%d-%m-%Y -d "$parmterD day")>fileH.txt
+
+ while read -r lineF; do
+ nameC=$(echo "$lineF"|cut -d" " -f1)
+   if [ "$nameC" = "Author:" ]; then
+    nameC=$(echo "$lineF"|cut -d" " -f2)
+      ((numsC["$nameC"]+=1))
+	  
+   fi
+ done</$PWD/fileH.txt
+rm /$PWD/fileH.txt
+ for key in "${!numsC[@]}"; do
+ echo  ${numsC["$key"]} "$key"
+ done
+ 
+ 

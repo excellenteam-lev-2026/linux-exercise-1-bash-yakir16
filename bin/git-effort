@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-tmp=$(git_extra_mktemp)
+tmp=$(mktemp)
+#THE BUG IS THE SCRIPT GIT_EXTRA_MKTEMP IT WAS NOT RECOGNIZED 
+#SO I CHANGED IT SO THAT IT WOULD CREATE TEMPORARY FILE USING THE MKTEMP COMMAND AND PUT THE PATH IN THE TMP VARIABLE
 above=0
 # if the output won't be printed to tty, disable the color
 test -t 1 && to_tty=true
+#Returns true if the script's output is connected to the screen and if is true to_tty variable is set to true
 color=
 
 #
@@ -11,14 +14,21 @@ color=
 #
 usage() {
   echo 1>&2 "usage: git effort [--above <value>] [<path>...] [-- [<log options>...]]"
+  #echo is command for print to screen command and > redirect the file descriptor stdout to stderr
 }
 
 #
 # get dates for the given <commit>
 #
 dates() {
-  echo "You still haven't solved all the bugs eh?" | tee /dev/stderr
-  echo "You still haven't solved all the bugs eh?" 1>&2
+ git log $args_to_git_log --pretty='format: %ad' --date=short -- "$1"
+ #THIS IS THE BUG BECUSE IS DID NOT RETURN WHAT 
+ #WAS EXPECTED FROM THE FUNCTION BUT AN OUTPUT MESSAGE "YOU STILL HAVEN'T SOLVED ALL THE BUGS EH?" TO THE SCREEN
+ #THE PURPOSE OF THE FUNCTION DATES() IS TO GET ALL DATES WHERE THERE WERE COMMITS THAT INCLUDED THE FILE OR PATH THAT THE USER PASSED ON THE COMMAND LINE
+ #INCLUDING OPTIONS FOR GIT LOG THAT HE PASSED AND ENTERED INTO THE $ARGS_TO_GIT_LOG VARIABLE.
+ #SO THE GIT LOG TAKE ALL THE  OPTIONS FOR GIT LOG SAVED IN THE $ARGS_TO_GIT_LOG VARIABLE WITH WITH FILES OR PATHS THAT THE USER PASSED
+ #AND RETURN ALL THE DATES ACCORDINGLY WITH THE FLAG --PRETTY: &AD THAT RETURNS ONLY THE COMMIT DATES FOR THE FILE OR PATH $1 WITHOUT SOME OTHER DETAILS
+ #AND THE FLAG --DATE=SHORT RETURNS SHORT DATE IN THE FORMAT %Y-%M-%D 
 }
 
 # tput, being quiet about unknown capabilities
@@ -82,6 +92,7 @@ color_for() {
 effort() {
     path=$1
     local commit_dates
+	#local is used to define variable that is local to the function only
     local color reset_color commits len dot f_dot i msg active
     reset_color=""
     test "$to_tty" = true && reset_color="$(tputq sgr0)"
@@ -91,15 +102,20 @@ effort() {
 
     # Ensure it's not just an empty line
     if [ -z "$(head -c 1 <<<"$commit_dates")" ]
+	#Passes the contents of the $commit_dates variable as input to the command that appears on the left
+	#head -c 1 returns one character from the input
+	#-z checks if the string is empty
     then
       exit 0
     fi
 
     commits=$(wc -l <<<"$commit_dates")
+	#wc -l return the number of line of the input
     color='90'
 
     # ignore <= --above
     test "$commits" -le "$above" && exit 0
+	#-le mean less or equal
 
     # commits
     color_for $(( commits - above ))
@@ -107,6 +123,7 @@ effort() {
     dot="."
     f_dot="$path"
     i=0 ; while test $i -lt $(( columns - len )) ; do
+	#-lt mean less
       f_dot=$f_dot$dot
       i=$((i+1))
     done
@@ -151,8 +168,9 @@ procs() {
 }
 
 declare -a paths=()
+#declare is to build new array with the name paths
 while [ "${#}" -ge 1 ] ; do
-
+#$# means the number of parameters passed is greater than or equal to 1
   case "$1" in
     --above)
       shift
@@ -160,12 +178,16 @@ while [ "${#}" -ge 1 ] ; do
       ;;
     --)
       shift
+	  #Overwrites the variable with the value -- which is now considered $1 by the second variable 
+	  #and the second variable is overwritten by the third variable and so on
       args_to_git_log=$(printf " %q" "${@:1}")
+	  #${@:1} means from the first parameter to the last parameter
       break
       ;;
     --*)
       usage
       echo 1>&2 "error: unknown argument $1"
+	  #echo is for print to the screen and 1>&2 redirect the file descriptor stdout to stderr
       echo 1>&2 "error: if that argument was meant for git-log,"
       echo 1>&2 "error: please put it after two dashes ( -- )."
       exit 1
@@ -180,27 +202,40 @@ done
 
 # Exit if above-value is not an int
 if [ -z "${above##*[!0-9]*}" ] ; then
+#Checks if a variable contains a non-digit character
+#above##*[!0-9]* means Finds in the above variable the longest part from the beginning 
+#that contains non-number character followed by anything and removes it
+#-z means the value is zero
   echo "error: argument to --above was not an integer" 1>&2
   exit 1
 fi
 
 # remove empty quotes that appear when there are no arguments
 args_to_git_log="${args_to_git_log#\ \'\'}"
+#args_to_git_log#\ \'\' means removes the shortest part from the beginning of the args_to_git_log variable
+#that matches pattern space and ' ' after him  
 export args_to_git_log
+#export means make the args_to_git_log variable available to child processes as well
 
 # [path ...]
 
 if test "${#paths}" -eq 0; then
+#"${#paths}" is the length of the value of the first element in the paths array
   save_ifs=$IFS
+#$IFS special variable that define how what is the separator that breaks strings into word
   IFS=$(echo -en "\n\b")
+#echo -en "\n\b" means print new line and then backspace
   paths=($(git ls-files))
+  #git ls-files return list of all files that Git is tracking
   IFS=$save_ifs
   unset save_ifs
+#unset deletes the variable save_ifs 
 fi
 
-# set column width to match longest filename
+#set column width to match longest filename
 max=0
 for path in "${paths[@]}"; do
+#"${paths[@]}" list of all elements in the paths array
     cur=${#path}
     if [[ $max -lt $cur ]]; then
         max=$cur
@@ -213,23 +248,35 @@ export columns
 
 hide_cursor
 trap show_cursor_and_cleanup INT
+#If the user presses Ctrl+C it will run the show_cursor_and_cleanup() function by used trap command
 
 heading
 
 # send paths to effort
 nPaths=${#paths[@]}
+#${#paths[@]} returns the number of elements in paths array
 nProcs=$(procs)
 nJobs="\j"
 for ((i=0; i<nPaths; ++i))
 do
     while (( ${nJobs@P} >= nProcs )); do
+#${nJobs@P} is the number of processes currently in the background in the current shell
         wait -n
+#wait -n waits for only one background process to finish first not for all processes
     done
-    effort "${paths[i]}" &
+    effort "${paths[i]}" &                                                                                                                                                                       
 done|tee "$tmp"
+#tee is command that takes input from stdin and writes the input to stdout 
+#and writes the input to the temporary file in "$tmp" 
 
 # if more than one path, sort and print
 test "$(wc -l "$tmp" | awk '{print $1}')" -gt 1 && sort_effort
+#wc -l "$tmp" counts how many lines are in the temporary file
+#awk '{print $1}' takes the number of line
+#-gt 1 Checks if there is more than one line
+#&& sort_effort if so runs the function sort_effort
+
+
 echo
 
 show_cursor_and_cleanup

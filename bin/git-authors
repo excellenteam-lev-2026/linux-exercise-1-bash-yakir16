@@ -2,9 +2,17 @@
 
 NO_EMAIL=false
 FILE=""
-
+LIST=false
+#THIS IS THE LINE OF THE BUG
+#MUST START THE CHANGE TO A CERTAIN BOOLEAN VALUE SO THAT IT CAN BE COMPARED 
+#THE LIST VARIABLE THAT CHECKS WHETHER THE USER SPECIFIED --LIST OR -L AS A PARAMETER IS NOT INITIALIZED, SO LATER IN THE CODE 
+#WE WILL NOT BE ABLE TO PASS THE CHECK WITHOUT GETTING AN ERROR IF IT IS THE CASE THAT HE DID NOT SPECIFY --LIST OR -L AS A PARAMETER
 while [[ $# -gt 0 ]]; do
+#while loop goes through all parameters passed on the command line as long as the list is greater than 0
+#$# specifies the list of all parameters passed
   case $1 in
+#case checks whether the user passed the parameters -l or --list 
+#or another parameter called --no-email or passed any other different parameter and depending on the check it performs certain actions
     -l|--list )
       LIST=true
       shift
@@ -12,6 +20,8 @@ while [[ $# -gt 0 ]]; do
     --no-email )
       NO_EMAIL=true
       shift
+	#Moves the passed parameter list one step to the right, meaning the first variable is overwritten by the second variable
+	#the third variable overwrites the second variable's place, and so on.
       ;;
     * )
       break
@@ -19,9 +29,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ $LIST != true ]; then
+#if the LIST variable is different from the boolean value true
   FILE=$1
+  
   if [ -z "$FILE" ]; then
-    FILE=$(find . -mindepth 1 -maxdepth 1 \( -iname '*authors*' -o -iname '*contributors*' \) | head -n1)
+  #if the variable FILE is empty
+    FILE=$(find . -mindepth 1 -maxdepth 1 -type f \( -iname '*authors*' -o -iname '*contributors*' \) | head -n1)
+	#find only searches the current folder if there is a file with a name that contains the words authors or contributors 
+	#I ADDED THE -TYPE F FIX BECAUSE WITHOUT IT IN CASES WHERE THERE IS A FOLDER WITH A SUITABLE NAME
+	#IT WILL TRY TO DO >> TO THE FOLDER AND IT WILL GIVE AN ERROR
     if [ -z "$FILE" ]; then
       FILE='AUTHORS'
     fi
@@ -37,8 +53,16 @@ authors() {
     # email will be used to uniq authors.
     git shortlog HEAD -sne | awk '{$1=""; sub(" ", ""); print}' | awk -F'<' '!x[$1]++' | awk -F'<' '!x[$2]++' \
       | awk -F'<' '{gsub(/ +$/, "", $1); print $1}'
+#git shortlog HEAD -sne Returns the details of all commits that can be reached from HEAD and the flags c is to display only the number of commits per user 
+#and subtract the rest of the details n is to sort by the number of commits per user from largest to smallest 
+#and the flag e is to also display the user's email
+#so in the end it will display the number of commits per user and next to it the user's name and next to it the user's email 
+#in the end of awk Only username will be printed without email !x[$n]++ means print the first field n and -F is the separator identifier between fields
+#sub replace replaces only the first occurrence of " " with " " in a line
+#gsub replace the + in end of the line with " "
   else
     git shortlog HEAD -sne | awk '{$1=""; sub(" ", ""); print}' | awk -F'<' '!x[$1]++' | awk -F'<' '!x[$2]++'
+	#displays the username at the end and their email next to it
   fi
 }
 
@@ -47,7 +71,13 @@ authors() {
 #
 
 if $LIST; then
+#if the variable LIST is with value true
   authors
 else
+ 
   authors >> "$FILE"
 fi
+
+
+
+
